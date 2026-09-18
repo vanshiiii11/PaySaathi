@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "PaySaathi",
+    "slug": "paysaathi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "paysaathi",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F9D74"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.paysaathi.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.paysaathi.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-location",
+      "expo-image-picker"
+    ]
+  }
+}

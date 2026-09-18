@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum ExchangeDirection {
+  CASH_TO_UPI
+  UPI_TO_CASH
+}
+
+enum ExchangeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  ACTIONED
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  QUICK_REPLY
+}
+
+model User {
+  id              String    @id @default(uuid())
+  phone           String    @unique
+  name            String
+  avatarUrl       String?
+  bio             String?
+  isVerified      Boolean   @default(false)
+  isSuspended     Boolean   @default(false)
+  rating          Float     @default(0)
+  ratingCount     Int       @default(0)
+  exchangeCount   Int       @default(0)
+  isActive        Boolean   @default(false)
+  intent          ExchangeDirection?
+  minAmount       Decimal?  @db.Decimal(10,2)
+  maxAmount       Decimal?  @db.Decimal(10,2)
+  radiusKm        Float     @default(3)
+  locationLat     Float?
+  locationLng     Float?
+  lastSeenAt      DateTime?
+  expoPushToken   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  exchangesAsRequester  Exchange[] @relation("requester")
+  exchangesAsPartner    Exchange[] @relation("partner")
+  reportsFiled          Report[]   @relation("reporter")
+  reportsAgainst        Report[]   @relation("reported")
+  blockedUsers          Block[]    @relation("blocker")
+  blockedBy             Block[]    @relation("blockee")
+  sentRatings           Rating[]   @relation("rater")
+  receivedRatings       Rating[]   @relation("ratee")
+  otpRecords            OtpRecord[]
+  refreshTokens         RefreshToken[]
+}
+
+model OtpRecord {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([phone])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Exchange {
+  id            String            @id @default(uuid())
+  requesterId   String
+  partnerId     String
+  direction     ExchangeDirection
+  amount        Decimal           @db.Decimal(10,2)
+  status        ExchangeStatus    @default(PENDING)
+  note          String?
+  meetingPoint  String?
+  expiresAt     DateTime
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  completedAt   DateTime?
+
+  requester   User        @relation("requester", fields: [requesterId], references: [id])
+  partner     User        @relation("partner", fields: [partnerId], references: [id])
+  ratings     Rating[]
+  chat        ChatThread?
+}
+
+model Rating {
+  id          String   @id @default(uuid())
+  exchangeId  String
+  raterId     String
+  rateeId     String
+  stars       Int
+  tags        String[]
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  exchange  Exchange @relation(fields: [exchangeId], references: [id])
+  rater     User     @relation("rater", fields: [raterId], references: [id])
+  ratee     User     @relation("ratee", fields: [rateeId], references: [id])
+
+  @@unique([exchangeId, raterId])
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  reportedId  String
+  reason      String
+  details     String?
+  exchangeId  String?
+  status      ReportStatus @default(OPEN)
+  createdAt   DateTime     @default(now())
+
+  reporter  User @relation("reporter", fields: [reporterId], references: [id])
+  reported  User @relation("reported", fields: [reportedId], references: [id])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockeeId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blocker", fields: [blockerId], references: [id])
+  blockee User @relation("blockee", fields: [blockeeId], references: [id])
+
+  @@unique([blockerId, blockeeId])
+}
+
+model ChatThread {
+  id         String    @id @default(uuid())
+  exchangeId String    @unique
+  createdAt  DateTime  @default(now())
+
+  exchange Exchange  @relation(fields: [exchangeId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  id        String      @id @default(uuid())
+  threadId  String
+  senderId  String
+  content   String
+  type      MessageType @default(TEXT)
+  isRead    Boolean     @default(false)
+  metadata  Json?       
+  createdAt DateTime    @default(now())
+
+  thread ChatThread @relation(fields: [threadId], references: [id])
+}
