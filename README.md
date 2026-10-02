@@ -1,4 +1,4 @@
-# PaySaathi 🤝💸
+# PaySaathi
 
 > **P2P cash ↔ UPI exchange matchmaking.** Connect with people nearby who want to swap physical cash for digital (UPI) payment, or vice versa.
 
